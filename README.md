@@ -44,3 +44,9 @@ std::function<void()> warpper_func = [task_ptr](){ (*task_ptr)(); };
 ```
 
 `function`：再次调用，封装成通过函数`void f()`加入队列。
+
+
+
+## CAS
+
+对于工作队列，使用CAS算法实现多个线程之间对于任务队列的访问，以提高并发量。

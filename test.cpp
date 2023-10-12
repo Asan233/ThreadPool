@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <random>
+#include "MinHeap.h"
 #include "ThreadPool.h"
 
 // 产生随机数
@@ -54,6 +55,7 @@ void example()
     // 初始化线程池
     pool.init();
 
+    /*
     // 提交乘法操作，总共30个
     for (int i = 1; i <= 3; ++i)
         for (int j = 1; j <= 10; ++j)
@@ -63,6 +65,7 @@ void example()
 
     // 使用ref传递的输出参数提交函数
     int output_ref;
+    // std::ref()对参数取引用，由于std::bind()默认进行赋值绑定，如果想让参数x引用进行绑定需要额外指定std::ref(x)
     auto future1 = pool.submit(multiply_output, std::ref(output_ref), 5, 6);
 
     // 等待乘法输出完成
@@ -80,10 +83,14 @@ void example()
     pool.shutdown();
 
     std::cout << "Thread pool shutdown" << std::endl;
+    */
+    auto future1 = pool.submit(test);
+    future1.get();
 }
 
 int main()
 {
     example();
+    while(1);
     return 0;
 }

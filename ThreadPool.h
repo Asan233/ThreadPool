@@ -1,7 +1,6 @@
 //
 // Created by Asan on 2023/10/9.
 //
-
 #ifndef LINUX_THREADPOOL_H
 #define LINUX_THREADPOOL_H
 #include <thread>
@@ -9,6 +8,7 @@
 #include <vector>
 #include <functional>
 #include <utility>
+#include <atomic>
 #include "SafeQuee.h"
 
 class ThreadPool
@@ -42,7 +42,7 @@ private:
                     std::unique_lock<std::mutex> lock(m_pool->m_conditional_mutex);
 
                     // 队列为空则休眠线程
-                    if(m_pool->m_queue.empty())
+                    if( m_pool->m_queue.empty() )
                     {
                         m_pool->m_conditional_lock.wait(lock);
                     }
@@ -51,7 +51,10 @@ private:
                     dequeued = m_pool->m_queue.dequeue(func);
                 }
                 // 成功取出则执行
-                if(dequeued){func();}
+                if( dequeued ){
+                    printf("dequeue work ! \n");
+                    func();
+                }
             }
         }
 
@@ -86,6 +89,7 @@ public:
 
         // 任务函数入队
         m_queue.enqueue(warpper_func);
+        printf("work enqueue !\n");
 
         // 唤醒等待中的线程
         m_conditional_lock.notify_one();
@@ -105,7 +109,4 @@ public:
     void init();    //初始化线程池
     void shutdown();    // 关闭线程池
 };
-
-
-
 #endif //LINUX_THREADPOOL_H

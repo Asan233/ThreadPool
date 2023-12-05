@@ -46,7 +46,6 @@ private:
                     {
                         m_pool->m_conditional_lock.wait(lock);
                     }
-
                     //取出队列
                     dequeued = m_pool->m_queue.dequeue(func);
                 }

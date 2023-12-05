@@ -9,6 +9,7 @@
 #include <time.h>
 #include <cstdlib>
 #include <climits>
+#include <string>
 
 struct MinHeapNode{
     int element;    // 被排序的元素
@@ -35,18 +36,14 @@ public:
 
 void merge(int arr[], int l, int m, int r);        // merge arr l[] and r[]
 void mergesort(int arr[], int l, int r);     // merge sort
-void mergeFiles(char *output_File, int n, int k);   // merge sort file
-void createInitialRuns(char *input_file, int run_size, int num_ways);    // using a merge algorithm to sort file
-void externalSort(char *input_file, char *output_file, int num_ways, int run_size);     // externalSort
-void test();    // test externalsort
+void mergeFiles(char *output_File, int n, int k, int id);   // merge sort file
+void mergeFiles(char *output_file, int n, int k, std::vector<std::string> &files); // merge sort file
+int createInitialRuns(char *input_file, int run_size, int num_ways, int id);    // using a merge algorithm to sort file
+void externalSort(char *input_file, char *output_file, int run_size, int id);     // externalSort
+void test(char * input);    // test externalsort
 
 
 // open file
 FILE *openFile(char *filename, char *mode);
-
-
-
-
-
 
 #endif //LINUX_MINHEAP_H

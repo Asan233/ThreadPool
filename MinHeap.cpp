@@ -4,7 +4,9 @@
 
 #include <cstdlib>
 #include <cstdio>
+#include <iostream>
 #include <string>
+#include <vector>
 #include "MinHeap.h"
 
 MinHeap::MinHeap(MinHeapNode *a, int size) : heap_size(size) {
@@ -65,12 +67,54 @@ void mergesort(int arr[], int l, int r){
 }
 
 /* Merge K sorted file, Names of file assumed to be 1, 2, 3, ...k */
-void mergeFiles(char *output_file, int n, int k){
+void mergeFiles(char *output_file, int n, int k, std::vector<std::string> &files){
     // 打开输入文件数据
     FILE *in[k];
     for(int i = 0; i < k; i++){
-        char filename[2];
-        snprintf(filename, sizeof(filename), "%d", i);
+        in[i] = openFile( (char *)(files[i].c_str()), "r" );
+    }
+    // 打开输出文件
+    FILE *out = openFile(output_file, "w");
+    // 创建小根堆元素
+    MinHeapNode *harr = new MinHeapNode[k];
+    int i;
+    for(i = 0; i < k; i++){
+        if(fscanf(in[i], "%d ", &harr[i].element) != 1) break;
+
+        harr[i].i = i;
+    }
+    // 创建小根堆
+    MinHeap hp = MinHeap(harr, k);
+    int count = 0;
+    /* 循环对k个文件进行归并 */
+    while(count != k){
+        //std::cout << "heap id : " << id << std::endl;
+        // 取出当前最小值
+        MinHeapNode root = hp.getMin();
+        // 将最小值写入输出文件
+        fprintf(out, "%d ", root.element);
+        // 从最小值的文件中在取出一个数加入堆中
+        if(fscanf(in[root.i], "%d ", &root.element) != 1){
+            // 说明第i个文件已经取完所有数据
+            root.element = INT_MAX;
+            ++count;
+        }
+        hp.replaceMin(root);
+    }
+    std::cout << "Mergefile successful " << std::endl;
+    // 关闭文件
+    for(int i = 0; i < k; i++)fclose(in[i]);
+    fclose(out);
+}
+
+/* Merge K sorted file, Names of file assumed to be 1, 2, 3, ...k */
+void mergeFiles(char *output_file, int n, int k, int id){
+    std::cout << "merging File  : " << id  << " out file : " << output_file << std::endl;
+    // 打开输入文件数据
+    FILE *in[k];
+    for(int i = 0; i < k; i++){
+        char filename[5];
+        snprintf(filename, sizeof(filename), "%d-%d", id, i);
         in[i] = openFile(filename, "r");
     }
     // 打开输出文件
@@ -88,6 +132,7 @@ void mergeFiles(char *output_file, int n, int k){
     int count = 0;
     /* 循环对k个文件进行归并 */
     while(count != k){
+        //std::cout << "heap id : " << id << std::endl;
         // 取出当前最小值
         MinHeapNode root = hp.getMin();
         // 将最小值写入输出文件
@@ -100,21 +145,26 @@ void mergeFiles(char *output_file, int n, int k){
         }
         hp.replaceMin(root);
     }
+    std::cout << "!!!!!success : " << id << std::endl;
     // 关闭文件
     for(int i = 0; i < k; i++)fclose(in[i]);
     fclose(out);
 }
 
 /* 对于一个大的文件，将其分成许多个 run_size 的文件进行k路归并 */
-void createInitialRuns(char *input_file, int run_size, int num_ways){
+int createInitialRuns(char *input_file, int run_size, int id){
     FILE *in = openFile(input_file, "r");
     // 创建输出文件进行k路归并
+    char filename[5];
+    /*
     FILE *out[num_ways];
-    char filename[2];
     for(int i = 0; i < num_ways; i++){
-        snprintf(filename, sizeof(filename), "%d", i);
+        snprintf(filename, sizeof(filename), "%d-%d", id, i);
         out[i] = openFile(filename, "w");
     }
+    */
+    std::vector<FILE *> out;
+
     int *arr = (int *)malloc(run_size * sizeof(int));
     bool more_input = true;
     int next_out_file = 0;
@@ -126,36 +176,44 @@ void createInitialRuns(char *input_file, int run_size, int num_ways){
                 more_input = false;
                 break;
             }
+            //std::cout << arr[i] << std::endl;
         }
+        if(!i)continue;
         // 对子文件进行排序
         mergesort(arr, 0, i - 1);
+        snprintf(filename, sizeof(filename), "%d-%d", id, next_out_file);
+        //std::cout << filename << std::endl;
+        out.push_back( openFile(filename, "w") );
         // 写入临时文件
         for(int j = 0; j < i; j++) fprintf(out[next_out_file], "%d ", arr[j]);
         next_out_file++;
     }
     // 关闭文件
-    for(int i = 0; i < num_ways; i++)fclose(out[i]);
+    for(int i = 0; i < next_out_file; i++)fclose(out[i]);
     fclose(in);
+    return next_out_file;
 }
 
-void externalSort(char *input_file, char *output_file, int num_ways, int run_size){
+void externalSort(char *input_file, char *output_file, int run_size, int id){
     // 将 "input_file" 分成多个小文件
-    createInitialRuns(input_file, run_size, num_ways);
+    int num_ways = createInitialRuns(input_file, run_size, id);
     // 对多个文件进行归并
-    mergeFiles(output_file, run_size, num_ways);
+
+    mergeFiles(output_file, run_size, num_ways, id);
+    std::cout << "merge complet : " << id << std::endl;
 }
 
-void test(){
-    int num_ways = 10, run_size = 1000;
-    char input_file[] = "input.txt";
-    char out_file[] = "output.txt";
+
+void test(char * input_file){
+    int num_ways = 1, run_size = 10000;
     // 自己造数据
     FILE *in = openFile(input_file, "w");
     srand(time(NULL));
     for(int i = 0; i < num_ways * run_size; i++) fprintf(in, "%d ", rand());
     fclose(in);
-    externalSort(input_file, out_file, num_ways, run_size);
+    //externalSort(input_file, out_file, num_ways, run_size);
 }
+
 
 FILE *openFile(char *filename, char *mode){
     FILE *fp = fopen(filename, mode);

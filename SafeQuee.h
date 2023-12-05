@@ -40,7 +40,7 @@ public:
     //返回队列长度
     int size(){
         //std::unique_lock<std::mutex> lock(m_mutex);
-        return (tail.load() - head.load() );
+        return (tail.load() - head.load() + MAX_SIZE) % MAX_SIZE;
     }
 
     //将任务入队
@@ -50,7 +50,7 @@ public:
         // CAS算法修改队尾指针
         do{
             val = tail.load();
-            if((val + 1) % MAX_SIZE == 0)
+            if( (val + 1) % MAX_SIZE == 0 )
                 return false;
         }while(!tail.compare_exchange_weak(val, (val + 1) % MAX_SIZE));
         // 新函数加入队尾
@@ -76,7 +76,6 @@ public:
         return true;
     }
 };
-
 
 
 #endif //LINUX_SAFEQUEE_H

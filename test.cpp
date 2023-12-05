@@ -4,93 +4,62 @@
 
 #include <iostream>
 #include <random>
+#include <vector>
 #include "MinHeap.h"
 #include "ThreadPool.h"
+#include "ReadDirectory.h"
 
-// 产生随机数
-std::random_device rd;
-
-std::mt19937 mt(rd());  //生成计算数mt
-
-std::uniform_int_distribution<int> dist(-1000, 1000);// -1000, 1000均匀分布数
-
-auto rnd = std::bind(dist, mt);
-
-// 线程睡眠时间
-void simulate_hard_computation()
+void SoftDir(std::vector<std::string> &filename, ThreadPool &pool)
 {
-    std::this_thread::sleep_for(std::chrono::milliseconds(2000 + rnd()));
-}
+    if(!filename.size())return ;
+    std::vector<std::string> outfiles;
+    for(int i = 0; i < filename.size(); i++)
+    {
+        outfiles.push_back(filename[i] + "_out");
+    }
 
-// 添加两个数字的简单函数并打印结果
-void multiply(const int a, const int b)
-{
-    simulate_hard_computation();
-    const int res = a * b;
-    std::cout << a << " * " << b << " = " << res << std::endl;
-}
+    std::vector<decltype(pool.submit(externalSort, (char *)filename[0].c_str(), (char *)outfiles[0].c_str(), 100, 0))> futures;
 
-// 添加并输出结果
-void multiply_output(int &out, const int a, const int b)
-{
-    simulate_hard_computation();
-    out = a * b;
-    std::cout << a << " * " << b << " = " << out << std::endl;
-}
+    for(int i = 0; i < filename.size(); i++)
+    {
+        futures.push_back( pool.submit(externalSort, (char *)(filename[i].c_str()), (char *)(outfiles[i].c_str()), 100, i) );
+    }
 
-// 结果返回
-int multiply_return(const int a, const int b)
-{
-    simulate_hard_computation();
-    const int res = a * b;
-    std::cout << a << " * " << b << " = " << res << std::endl;
-    return res;
-}
-
-void example()
-{
-    // 创建3个线程的线程池
-    ThreadPool pool(3);
-
-    // 初始化线程池
-    pool.init();
-
-    /*
-    // 提交乘法操作，总共30个
-    for (int i = 1; i <= 3; ++i)
-        for (int j = 1; j <= 10; ++j)
-        {
-            pool.submit(multiply, i, j);
-        }
-
-    // 使用ref传递的输出参数提交函数
-    int output_ref;
-    // std::ref()对参数取引用，由于std::bind()默认进行赋值绑定，如果想让参数x引用进行绑定需要额外指定std::ref(x)
-    auto future1 = pool.submit(multiply_output, std::ref(output_ref), 5, 6);
-
-    // 等待乘法输出完成
-    future1.get();
-    std::cout << "Last operation result is equals to " << output_ref << std::endl;
-
-    // 使用return参数提交函数
-    auto future2 = pool.submit(multiply_return, 5, 3);
-
-    // 等待乘法输出完成
-    int res = future2.get();
-    std::cout << "Last operation result is equals to " << res << std::endl;
-
+    for(auto &ft : futures)
+    {
+        ft.get();
+    }
     // 关闭线程池
     pool.shutdown();
-
-    std::cout << "Thread pool shutdown" << std::endl;
-    */
-    auto future1 = pool.submit(test);
-    future1.get();
+    mergeFiles("out.txt", 100, outfiles.size(), outfiles);
 }
 
-int main()
+int main(int argc, char ** argv)
 {
-    example();
-    while(1);
+    if(argc != 2)
+    {
+        std::cout << "Input [./test filename]" << std::endl;
+        return 0;
+    }
+    // 创建4个线程的线程池
+    ThreadPool pool(4);
+    // 初始化线程池
+    pool.init();
+    std::cout << "ThreadPool Init ..." << std::endl;
+    /*
+    // 创建测试数据
+    for(int i = 0; i < 100; i++)
+    {
+        std::string name = "./data/" + to_string(i) + ".txt";
+        test((char *)name.c_str());
+    }
+    */
+   
+    std::vector<std::string> filename;
+    int fd = readdir(argv[1], filename);
+    for(auto name : filename)
+        std::cout << name << std::endl;
+    SoftDir(filename, pool);
+    
     return 0;
 }

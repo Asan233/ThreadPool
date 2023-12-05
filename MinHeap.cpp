@@ -88,7 +88,6 @@ void mergeFiles(char *output_file, int n, int k, std::vector<std::string> &files
     int count = 0;
     /* 循环对k个文件进行归并 */
     while(count != k){
-        //std::cout << "heap id : " << id << std::endl;
         // 取出当前最小值
         MinHeapNode root = hp.getMin();
         // 将最小值写入输出文件
@@ -101,7 +100,6 @@ void mergeFiles(char *output_file, int n, int k, std::vector<std::string> &files
         }
         hp.replaceMin(root);
     }
-    std::cout << "Mergefile successful " << std::endl;
     // 关闭文件
     for(int i = 0; i < k; i++)fclose(in[i]);
     fclose(out);
@@ -145,7 +143,6 @@ void mergeFiles(char *output_file, int n, int k, int id){
         }
         hp.replaceMin(root);
     }
-    std::cout << "!!!!!success : " << id << std::endl;
     // 关闭文件
     for(int i = 0; i < k; i++)fclose(in[i]);
     fclose(out);
@@ -156,13 +153,6 @@ int createInitialRuns(char *input_file, int run_size, int id){
     FILE *in = openFile(input_file, "r");
     // 创建输出文件进行k路归并
     char filename[5];
-    /*
-    FILE *out[num_ways];
-    for(int i = 0; i < num_ways; i++){
-        snprintf(filename, sizeof(filename), "%d-%d", id, i);
-        out[i] = openFile(filename, "w");
-    }
-    */
     std::vector<FILE *> out;
 
     int *arr = (int *)malloc(run_size * sizeof(int));
@@ -176,13 +166,11 @@ int createInitialRuns(char *input_file, int run_size, int id){
                 more_input = false;
                 break;
             }
-            //std::cout << arr[i] << std::endl;
         }
         if(!i)continue;
         // 对子文件进行排序
         mergesort(arr, 0, i - 1);
         snprintf(filename, sizeof(filename), "%d-%d", id, next_out_file);
-        //std::cout << filename << std::endl;
         out.push_back( openFile(filename, "w") );
         // 写入临时文件
         for(int j = 0; j < i; j++) fprintf(out[next_out_file], "%d ", arr[j]);

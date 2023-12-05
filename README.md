@@ -1,5 +1,19 @@
 # ThreadPool
 
+编译
+
+```makefile
+make all
+```
+
+运行
+
+```shell
+./test [目标文件路径]
+```
+
+
+
 [参考文章 : C++线程池实现](https://zhuanlan.zhihu.com/p/367309864)
 
 主要代码在于如何将所有任务：
